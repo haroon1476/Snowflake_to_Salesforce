@@ -1,7 +1,6 @@
 import snowflake.connector
 from dotenv import load_dotenv
 import os
-
 from simple_salesforce import Salesforce
 from simple_salesforce.bulk import SFBulkHandler
 
@@ -32,8 +31,8 @@ def loadDataFromSnowflake():
     data = cur.fetchall()
 
     # printing data to verify that the data has been loaded from snowflake successfully
-    for sampleData in data:
-        print(f"ID = {sampleData[0]} , Name = {sampleData[1]} , Age = {sampleData[2]} , Height = {sampleData[3]}")
+    # for sampleData in data:
+    #     print(f"ID = {sampleData[0]} , Name = {sampleData[1]} , Age = {sampleData[2]} , Height = {sampleData[3]}")
 
     # closing the cursor and connections
     cur.close()
@@ -47,6 +46,7 @@ def dumpDataIntoSalesforce(data):
     # salesforce authentication
     sf = Salesforce(username=os.getenv("SF_username") , password=os.getenv("SF_password") , security_token=os.getenv("SF_securitytoken"))
 
+
     if sf.session_id and sf.instance_url:
         print("Salesforce connection successful.")
     else:
@@ -59,6 +59,7 @@ def dumpDataIntoSalesforce(data):
         print(f"Successfully connected to Salesforce Bulk API: {bulkHandler.bulk_url}")
     else:
         print("Failed to connect to Bulk API.")
+
 
     # < ----------------- CODE THAT USES SFBULKHANDLER TO INSERT THE STUDENT DATA INTO SALESFORCE CUSTOM STUDENT OBJECT USING BULK APIS ---------------------------------------- >
 
@@ -74,7 +75,18 @@ def dumpDataIntoSalesforce(data):
     ]
 
     # Upserting the data into the salesforce via BulkHandler
-    bulkHandler.submit_dml(object_name="Student__c", dml="upsert",data=studentData, external_id_field="StudentID__c")
+    bulkHandler.submit_dml(object_name="Student__c", dml="upsert",data=studentData, external_id_field="StudentID__c" , batch_size='auto')
+
+
+    # querying the salesforce data using SOQL
+    data = sf.query_all_iter("select StudentID__c, StudentName__c, StudentAge__c , StudentHeight__c FROM Student__c")
+    for studentNo, row in enumerate(data):
+        print(f"\nStudent {studentNo}")
+        print("Student ID :", row.get('StudentID__c'))
+        print("Student Name :", row.get('StudentName__c'))
+        print("Student Age : " , row.get('StudentAge__c'))
+        print("Student Height :", row.get('StudentHeight__c'))
+    
 
 
 def runPipeline():
