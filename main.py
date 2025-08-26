@@ -31,8 +31,8 @@ def loadDataFromSnowflake():
     data = cur.fetchall()
 
     # printing data to verify that the data has been loaded from snowflake successfully
-    # for sampleData in data:
-    #     print(f"ID = {sampleData[0]} , Name = {sampleData[1]} , Age = {sampleData[2]} , Height = {sampleData[3]}")
+    for sampleData in data:
+        print(f"ID = {sampleData[0]} , Name = {sampleData[1]} , Age = {sampleData[2]} , Height = {sampleData[3]}")
 
     # closing the cursor and connections
     cur.close()
@@ -87,6 +87,45 @@ def dumpDataIntoSalesforce(data):
         print("Student Age : " , row.get('StudentAge__c'))
         print("Student Height :", row.get('StudentHeight__c'))
     
+
+    # creating custom salesforce object via metadata api calls
+    mdapi = sf.mdapi
+    customTeacherObject = mdapi.CustomObject(
+
+        fullName="Teacher__c",  
+        label="Teacher", 
+        pluralLabel="Teachers",  
+        nameField=mdapi.CustomField(
+            label="Teacher ID", 
+            type=mdapi.FieldType("Text") 
+        ),
+        deploymentStatus=mdapi.DeploymentStatus("Deployed"),
+        sharingModel=mdapi.SharingModel("Read")
+    )
+
+    # Add custom fields for Name and Years_of_Experience
+    name_field = mdapi.CustomField(
+        fullName="Teacher__c.teacherName__c", 
+        label="Name", 
+        type=mdapi.FieldType("Text"),
+        length=30
+    )
+
+    yearsOfExperience_field = mdapi.CustomField(
+        fullName="Teacher__c.YearsOfExperience__c",  
+        label="Years of Experience", 
+        type=mdapi.FieldType("Number"),
+        precision=2, # total 2 digit number in this field is allowed in this filed 
+        scale=0  # zero digits after the decimal point
+    )
+
+    # Creating the Teacher object
+    mdapi.CustomObject.create(customTeacherObject)
+
+    # Creating the Name and YearsOfExperience fields
+    mdapi.CustomField.create(name_field)
+    mdapi.CustomField.create(yearsOfExperience_field)
+
 
 
 def runPipeline():
